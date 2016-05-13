@@ -67,7 +67,8 @@ describe('Queue', function () {
 
     it('should recover from a connection loss', function (done) {
       queue = Queue('test');
-      queue.on('error', function () {
+      queue.on('error', err => {
+        console.log(err);
         // Prevent errors from bubbling up into exceptions
       });
 
@@ -77,7 +78,7 @@ describe('Queue', function () {
         done();
       });
 
-      queue.bclient.stream.end();
+      queue.bclient.stream.destroy();
       queue.bclient.emit('error', new Error('ECONNRESET'));
 
       queue.createJob({foo: 'bar'}).save();
@@ -107,10 +108,10 @@ describe('Queue', function () {
     it('creates a queue with default redis settings', function (done) {
       queue = Queue('test');
       queue.once('ready', function () {
-        assert.strictEqual(queue.client.connectionOption.host, '127.0.0.1');
-        assert.strictEqual(queue.bclient.connectionOption.host, '127.0.0.1');
-        assert.strictEqual(queue.client.connectionOption.port, 6379);
-        assert.strictEqual(queue.bclient.connectionOption.port, 6379);
+        assert.strictEqual(queue.client.connection_options.host, '127.0.0.1');
+        assert.strictEqual(queue.bclient.connection_options.host, '127.0.0.1');
+        assert.strictEqual(queue.client.connection_options.port, 6379);
+        assert.strictEqual(queue.bclient.connection_options.port, 6379);
         assert.strictEqual(queue.client.selected_db, 0);
         assert.strictEqual(queue.bclient.selected_db, 0);
         done();
@@ -126,8 +127,8 @@ describe('Queue', function () {
       });
 
       queue.once('ready', function () {
-        assert.strictEqual(queue.client.connectionOption.host, 'localhost');
-        assert.strictEqual(queue.bclient.connectionOption.host, 'localhost');
+        assert.strictEqual(queue.client.connection_options.host, 'localhost');
+        assert.strictEqual(queue.bclient.connection_options.host, 'localhost');
         assert.strictEqual(queue.client.selected_db, 1);
         assert.strictEqual(queue.bclient.selected_db, 1);
         done();
@@ -140,7 +141,7 @@ describe('Queue', function () {
       });
 
       queue.once('ready', function () {
-        assert.strictEqual(queue.client.connectionOption.host, '127.0.0.1');
+        assert.strictEqual(queue.client.connection_options.host, '127.0.0.1');
         assert.isUndefined(queue.bclient);
         done();
       });
