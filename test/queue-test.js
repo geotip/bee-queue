@@ -67,10 +67,7 @@ describe('Queue', function () {
 
     it('should recover from a connection loss', function (done) {
       queue = Queue('test');
-      queue.on('error', err => {
-        console.log(err);
-        // Prevent errors from bubbling up into exceptions
-      });
+      queue.on('error', err => {});
 
       queue.process(function (job, jobDone) {
         assert.strictEqual(job.data.foo, 'bar');
@@ -78,10 +75,16 @@ describe('Queue', function () {
         done();
       });
 
-      queue.bclient.stream.destroy();
-      queue.bclient.emit('error', new Error('ECONNRESET'));
+      var batch = queue.bclient.batch()
+          .client('kill', 'type', 'pubsub')
+          .client('kill', 'type', 'normal');
+      batch.exec(function(err) {
+        if(err) {
+          throw err;
+        }
+        queue.createJob({foo: 'bar'}).save();
+      });
 
-      queue.createJob({foo: 'bar'}).save();
     });
 
 
